@@ -20,6 +20,7 @@ jobs:
         run: syft dir:. -o cyclonedx-json > syft-sbom.json
 
       # Install Trivy
+      
       - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo bash
@@ -29,6 +30,7 @@ jobs:
 
       - name: Generate SBOM with Trivy
         run: trivy sbom --format cyclonedx --output trivy-sbom.json .
+
 
       # Install CycloneDX CLI
       - name: Install CycloneDX CLI
