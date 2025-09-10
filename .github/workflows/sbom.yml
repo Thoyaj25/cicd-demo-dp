@@ -17,9 +17,11 @@ jobs:
 
       - name: Generate SBOM with Syft
         run: syft dir:. -o cyclonedx-json > syft-sbom.json
+      
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo bash
+           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.s
+
       - name: Generate SBOM with Trivy
         run: trivy sbom --format cyclonedx --output trivy-sbom.json .
 
