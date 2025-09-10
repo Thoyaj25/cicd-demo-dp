@@ -34,3 +34,8 @@ jobs:
         run: |
           cyclonedx validate --input-file syft-sbom.json
           cyclonedx validate --input-file trivy-sbom.json
+      - name: Run Pytest
+        run: |
+          pip install pytest
+          pytest
+
