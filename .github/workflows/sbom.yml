@@ -7,24 +7,30 @@ on:
 jobs:
   sbom:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Install Syft
       - name: Install Syft
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-
       - name: Generate SBOM with Syft
         run: syft dir:. -o cyclonedx-json > syft-sbom.json
-      
+
+      # Install Trivy
       - name: Install Trivy
         run: |
-           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.s
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo bash
+
+      - name: Verify Trivy Installation
+        run: trivy --version
 
       - name: Generate SBOM with Trivy
         run: trivy sbom --format cyclonedx --output trivy-sbom.json .
 
+      # Install CycloneDX CLI
       - name: Install CycloneDX CLI
         run: |
           curl -sSL https://github.com/CycloneDX/cyclonedx-cli/releases/latest/download/cyclonedx-linux-x64 -o cyclonedx
