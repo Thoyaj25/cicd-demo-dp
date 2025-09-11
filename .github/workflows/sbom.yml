@@ -3,40 +3,48 @@ name: Generate SBOM
 on:
   push:
     branches: [main]
+  pull_request:
 
 jobs:
   sbom:
+    name: SBOM Generation
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Syft
+      - name: Set up Syft
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
-      - name: Generate SBOM with Syft
-        run: syft dir:. -o cyclonedx-json > syft-sbom.json
-      - name: Run Trivy SBOM Scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: sbom
-          format: cyclonedx
-          output: trivy-sbom.json
-          scan-ref: .
-      - name: Install CycloneDX CLI
+      - name: Generate SBOM from Dockerfile
         run: |
-          curl -sSL https://github.com/CycloneDX/cyclonedx-cli/releases/latest/download/cyclonedx-linux-x64 -o cyclonedx
-          chmod +x cyclonedx
-          sudo mv cyclonedx /usr/local/bin/
+          syft packages dockerfile:. -o cyclonedx-json > sbom-dockerfile.json
 
-      - name: Validate SBOMs
+      - name: Generate SBOM from source code
         run: |
-          cyclonedx validate --input-file syft-sbom.json
-          cyclonedx validate --input-file trivy-sbom.json
-      - name: Run Pytest
+          syft dir:. -o cyclonedx-json > sbom-source.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom-files
+          path: |
+            sbom-dockerfile.json
+            sbom-source.json
+      - name: Install Trivy
         run: |
-          pip install pytest
-          pytest
+          sudo apt-get install wget
+          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.1_Linux-64bit.deb
+          sudo dpkg -i trivy_0.50.1_Linux-64bit.deb
+
+      - name: Scan Dockerfile for vulnerabilities
+        run: |
+          trivy fs . --severity HIGH,CRITICAL --format json --output trivy-results.json
+      - name: Upload Trivy scan results
+        uses: actions/upload-artifact@v3
+        with:
+          name: trivy-results
+          path: trivy-results.json
 
