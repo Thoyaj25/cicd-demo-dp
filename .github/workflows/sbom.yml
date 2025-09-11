@@ -1,4 +1,5 @@
-name: Generate SBOM
+# Create a sample GitHub Actions workflow file for a JavaScript (Node.js) project
+workflow_content = """name: Node.js SBOM and Security Scan
 
 on:
   push:
@@ -6,45 +7,53 @@ on:
   pull_request:
 
 jobs:
-  sbom:
-    name: SBOM Generation
+  sbom-and-security:
     runs-on: ubuntu-latest
+    name: Generate SBOM and Scan for Vulnerabilities
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Syft
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Syft
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
-      - name: Generate SBOM from Dockerfile
-        run: |
-          syft packages dockerfile:. -o cyclonedx-json > sbom-dockerfile.json
-
-      - name: Generate SBOM from source code
+      - name: Generate SBOM from source
         run: |
           syft dir:. -o cyclonedx-json > sbom-source.json
 
-      - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: sbom-files
-          path: |
-            sbom-dockerfile.json
-            sbom-source.json
       - name: Install Trivy
         run: |
           sudo apt-get install wget
           wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.1_Linux-64bit.deb
           sudo dpkg -i trivy_0.50.1_Linux-64bit.deb
 
-      - name: Scan Dockerfile for vulnerabilities
+      - name: Run Trivy scan
         run: |
           trivy fs . --severity HIGH,CRITICAL --format json --output trivy-results.json
-      - name: Upload Trivy scan results
+
+      - name: Upload SBOM and Trivy results
         uses: actions/upload-artifact@v3
         with:
-          name: trivy-results
-          path: trivy-results.json
+          name: security-artifacts
+          path: |
+            sbom-source.json
+            trivy-results.json
+"""
+
+# Save the workflow file
+with open(".github/workflows/nodejs-sbom.yml", "w") as f:
+    f.write(workflow_content)
+
+# Confirm creation
+print("GitHub Actions workflow file 'nodejs-sbom.yml' has been created in .github/workflows/")
 
